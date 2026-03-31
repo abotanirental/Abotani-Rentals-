@@ -1,76 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Abotani Rentals</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- Firebase v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-<style>
-body {
-  font-family: Arial;
-  background: #f4f6f9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  width: 350px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-}
-input, select {
-  width: 100%;
-  padding: 10px;
-  margin: 5px 0;
-}
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 5px;
-  border: none;
-  color: white;
-}
-.check { background: #007bff; }
-.pay { background: #25D366; }
-</style>
+  <title>Abotani Rentals</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
+<body style="font-family:Arial; background:#f4f6f9; display:flex; justify-content:center; align-items:center; height:100vh;">
 
-<div class="card">
+<div style="background:white; padding:20px; border-radius:12px; width:340px; box-shadow:0 10px 20px rgba(0,0,0,0.1);">
 
-<h2>🚲 Abotani Rentals</h2>
+<h2>🛵 Abotani Rentals</h2>
 
-<input id="name" placeholder="Full Name">
-<input id="address" placeholder="Address">
-<input id="aadhar" placeholder="Aadhaar Number">
-<input id="phone" placeholder="WhatsApp Number">
+<input id="name" placeholder="Full Name"><br>
+<input id="address" placeholder="Address"><br>
+<input id="aadhaar" placeholder="Aadhaar Number (12 digits)"><br>
+<input id="phone" placeholder="WhatsApp Number"><br>
 
 <select id="vehicle">
-  <option value="699">Scooty ₹699/day</option>
-  <option value="799">Bike ₹799/day</option>
-</select>
+<option value="699">Scooty ₹699/day</option>
+<option value="799">Bike ₹799/day</option>
+</select><br>
 
-<input type="date" id="date">
-<input type="number" id="days" placeholder="Days (minimum 1)">
+<input type="date" id="date"><br>
+<input type="number" id="days" placeholder="Days (min 1)"><br>
 
 <h3 id="total">Total: ₹0</h3>
 <p id="status"></p>
 
-<button class="check" onclick="checkAvailability()">Check Availability</button>
-<button id="payBtn" class="pay" onclick="bookNow()" style="display:none;">Pay & Book</button>
+<button onclick="checkAvailability()">Check Availability</button>
+<button id="payBtn" onclick="bookNow()" style="display:none;">Pay & Book</button>
 
 </div>
 
-<script>
+<script type="module">
 
-// 🔥 YOUR FIREBASE CONFIG
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, getDocs } 
+from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+// ✅ YOUR REAL CONFIG (ALREADY ADDED)
 const firebaseConfig = {
   apiKey: "AIzaSyASIPoPxWTP46q8c2rEE418uzSBQgg8cMo",
   authDomain: "abotani-rental.firebaseapp.com",
@@ -80,85 +48,72 @@ const firebaseConfig = {
   appId: "1:823152338461:web:963a771468499ae7a588f4"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // GET DATA
 function getData(){
-  let name = document.getElementById("name").value;
-  let address = document.getElementById("address").value;
-  let aadhar = document.getElementById("aadhar").value;
-  let phone = document.getElementById("phone").value;
-  let vehicle = document.getElementById("vehicle").value;
-  let date = document.getElementById("date").value;
-  let days = parseInt(document.getElementById("days").value);
+  const name = document.getElementById("name").value;
+  const address = document.getElementById("address").value;
+  const aadhaar = document.getElementById("aadhaar").value;
+  const phone = document.getElementById("phone").value;
+  const vehicle = document.getElementById("vehicle").value;
+  const date = document.getElementById("date").value;
+  const days = parseInt(document.getElementById("days").value);
 
   if(!name || !phone || !date || days < 1){
-    alert("Fill all details (minimum 1 day)");
+    alert("Fill all fields (minimum 1 day required)");
     return null;
   }
 
-  let total = vehicle * days;
+  if(aadhaar.length !== 12){
+    alert("Aadhaar must be 12 digits");
+    return null;
+  }
+
+  const total = vehicle * days;
   document.getElementById("total").innerText = "Total: ₹" + total;
 
-  return {name,address,aadhar,phone,vehicle,date,days,total};
+  return {name, address, aadhaar, phone, vehicle, date, days, total};
 }
 
-// CHECK AVAILABILITY (WITH ADMIN BLOCK)
-function checkAvailability(){
-  let d = getData();
+// CHECK AVAILABILITY
+window.checkAvailability = async function(){
+  const d = getData();
   if(!d) return;
 
-  // check blocked dates
-  db.collection("blocked").where("date","==",d.date).get()
-  .then(blockSnap => {
+  const q = query(collection(db,"bookings"), where("date","==",d.date));
+  const snapshot = await getDocs(q);
 
-    if(!blockSnap.empty){
-      status.innerText = "❌ Blocked by admin";
-      status.style.color = "red";
-      payBtn.style.display = "none";
-      return;
-    }
-
-    // check bookings
-    db.collection("bookings").where("date","==",d.date).get()
-    .then(snapshot => {
-
-      if(snapshot.empty){
-        status.innerText = "✅ Available";
-        status.style.color = "green";
-        payBtn.style.display = "block";
-      } else {
-        status.innerText = "❌ Not Available";
-        status.style.color = "red";
-        payBtn.style.display = "none";
-      }
-
-    });
-
-  });
+  if(snapshot.empty){
+    document.getElementById("status").innerText = "✅ Available";
+    document.getElementById("payBtn").style.display = "block";
+  } else {
+    document.getElementById("status").innerText = "❌ Not Available";
+    document.getElementById("payBtn").style.display = "none";
+  }
 }
 
 // BOOK + PAYMENT + WHATSAPP
-function bookNow(){
-  let d = getData();
+window.bookNow = async function(){
+  const d = getData();
   if(!d) return;
 
-  db.collection("bookings").add(d);
+  await addDoc(collection(db,"bookings"), d);
 
   // UPI
   window.location.href = `upi://pay?pa=nanayukar@oksbi&pn=Abotani Rentals&am=${d.total}&cu=INR`;
 
-  let msg = `Booking Confirmed
+  const msg = `Booking Confirmed!
 Name: ${d.name}
 Date: ${d.date}
 Days: ${d.days}
 Total: ₹${d.total}`;
 
-  // customer
+  // Customer WhatsApp
   window.open(`https://wa.me/91${d.phone}?text=${encodeURIComponent(msg)}`);
 
-  // admin
+  // Admin WhatsApp
   window.open(`https://wa.me/918798394440?text=${encodeURIComponent(msg)}`);
 }
 
