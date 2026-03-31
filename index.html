@@ -1,174 +1,155 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Abotani Rentals</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abotani Rentals</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { font-family: Arial; background:#f5f5f5; margin:0; }
-    .container {
-      max-width:400px; margin:auto; background:white;
-      padding:20px; border-radius:15px; margin-top:20px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
-    }
-    input, select {
-      width:100%; padding:12px; margin:8px 0;
-      border-radius:8px; border:1px solid #ccc;
-    }
-    .btn {
-      width:100%; padding:14px; margin-top:10px;
-      border:none; border-radius:10px; color:white;
-    }
-    .whatsapp{background:#25D366;}
-    .pay{background:black;}
-    .email{background:#007bff;}
-    .receipt{background:#444;}
-    .total{font-weight:bold; text-align:center;}
-    #availability{font-weight:bold; text-align:center;}
-  </style>
+<!-- Firebase v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 350px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+}
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 5px;
+  border: none;
+  color: white;
+}
+.check { background: #007bff; }
+.pay { background: #25D366; }
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="card">
 
-<h2>🛵 Abotani Rentals</h2>
+<h2>🚲 Abotani Rentals</h2>
 
-<input id="name" placeholder="Name">
-<input id="phone" placeholder="Phone">
-<input id="email" placeholder="Email">
+<input id="name" placeholder="Full Name">
+<input id="address" placeholder="Address">
+<input id="aadhaar" placeholder="Aadhaar Number">
+<input id="phone" placeholder="WhatsApp Number">
 
-<select id="vehicle" onchange="calcTotal(); checkAvailability()">
-  <option value="">Select Vehicle</option>
-  <option value="699">Scooty - ₹699/day</option>
-  <option value="799">Bike - ₹799/day</option>
+<select id="vehicle">
+  <option value="699">Scooty ₹699/day</option>
+  <option value="799">Bike ₹799/day</option>
 </select>
 
-<input type="date" id="date" onchange="checkAvailability()">
-<input type="number" id="days" placeholder="Days" oninput="calcTotal()">
+<input type="date" id="date">
+<input type="number" id="days" placeholder="Days (min 1)">
 
-<div class="total" id="total">Total: ₹0</div>
-<div id="availability"></div>
+<h3 id="total">Total: ₹0</h3>
+<p id="status"></p>
 
-<button class="btn whatsapp" onclick="bookWhatsApp()">WhatsApp</button>
-<button class="btn pay" onclick="payNow()">Pay</button>
-<button class="btn email" onclick="sendEmail()">Email</button>
-<button class="btn receipt" onclick="printReceipt()">Receipt</button>
+<button class="check" onclick="checkAvailability()">Check Availability</button>
+<button id="payBtn" class="pay" onclick="bookNow()" style="display:none;">Pay & Book</button>
 
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
 <script>
+
+// 🔥 YOUR FIREBASE CONFIG
 const firebaseConfig = {
-    apiKey: "AIzaSyASIPoPxWTP46q8c2rEE418uzSBQgg8cMo",
-    authDomain: "abotani-rental.firebaseapp.com",
-    projectId: "abotani-rental",
-    storageBucket: "abotani-rental.firebasestorage.app",
-    messagingSenderId: "823152338461",
-    appId: "1:823152338461:web:963a771468499ae7a588f4"
-  };
+  apiKey: "AIzaSyASIPoPxWTP46q8c2rEE418uzSBQgg8cMo",
+  authDomain: "abotani-rental.firebaseapp.com",
+  projectId: "abotani-rental",
+  storageBucket: "abotani-rental.firebasestorage.app",
+  messagingSenderId: "823152338461",
+  appId: "1:823152338461:web:963a771468499ae7a588f4"
+};
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Get Details
-function getDetails(){
-  let name=name.value, phone=phone.value, email=email.value;
-  let v=document.getElementById("vehicle");
-  let vehicleText=v.options[v.selectedIndex].text;
-  let price=v.value;
-  let date=date.value, days=days.value;
+// GET DATA
+function getData(){
+  let name = document.getElementById("name").value;
+  let address = document.getElementById("address").value;
+  let aadhaar = document.getElementById("aadhaar").value;
+  let phone = document.getElementById("phone").value;
+  let vehicle = document.getElementById("vehicle").value;
+  let date = document.getElementById("date").value;
+  let days = parseInt(document.getElementById("days").value);
 
-  if(!name||!phone||!email||!price||!date||!days){
-    alert("Fill all"); return null;
+  if(!name || !phone || !date || days < 1){
+    alert("Fill all details (minimum 1 day)");
+    return null;
   }
 
-  return {name,phone,email,vehicleText,price,date,days,total:price*days};
+  let total = vehicle * days;
+  document.getElementById("total").innerText = "Total: ₹" + total;
+
+  return {name,address,aadhar,phone,vehicle,date,days,total};
 }
 
-// Total
-function calcTotal(){
-  let p=vehicle.value, d=days.value;
-  if(p&&d) total.innerText="Total: ₹"+(p*d);
+// CHECK AVAILABILITY
+function checkAvailability(){
+  let d = getData();
+  if(!d) return;
+
+  db.collection("bookings")
+    .where("date","==",d.date)
+    .get()
+    .then(snapshot => {
+
+      if(snapshot.empty){
+        status.innerText = "✅ Available";
+        status.style.color = "green";
+        payBtn.style.display = "block";
+      } else {
+        status.innerText = "❌ Not Available";
+        status.style.color = "red";
+        payBtn.style.display = "none";
+      }
+
+    });
 }
 
-// Availability
-async function checkAvailability(){
-  let v=vehicle.options[vehicle.selectedIndex].text;
-  let d=date.value;
-  if(!v||!d) return;
+// BOOK NOW
+function bookNow(){
+  let d = getData();
+  if(!d) return;
 
-  let snap=await db.collection("bookings")
-    .where("vehicleText","==",v)
-    .where("date","==",d).get();
+  db.collection("bookings").add(d);
 
-  if(!snap.empty){
-    availability.innerText="❌ Not Available";
-    availability.style.color="red";
-  }else{
-    availability.innerText="✅ Available";
-    availability.style.color="green";
-  }
+  // UPI Payment
+  window.location.href = `upi://pay?pa=nanayukar@oksbi&pn=Abotani Rentals&am=${d.total}&cu=INR`;
+
+  let msg = `Booking Confirmed
+Name: ${d.name}
+Date: ${d.date}
+Days: ${d.days}
+Total: ₹${d.total}`;
+
+  // WhatsApp to customer
+  window.open(`https://wa.me/91${d.phone}?text=${encodeURIComponent(msg)}`);
+
+  // WhatsApp to admin
+  window.open(`https://wa.me/918798394440?text=${encodeURIComponent(msg)}`);
 }
 
-// Save Booking
-async function saveBooking(d){
-  await db.collection("bookings").add(d);
-}
-
-// WhatsApp Booking
-async function bookWhatsApp(){
-  let d=getDetails(); if(!d) return;
-
-  let snap=await db.collection("bookings")
-    .where("vehicleText","==",d.vehicleText)
-    .where("date","==",d.date).get();
-
-  if(!snap.empty){ alert("Not available"); return; }
-
-  await saveBooking(d);
-
-  let msg=`Name:${d.name}
-Vehicle:${d.vehicleText}
-Days:${d.days}
-Date:${d.date}
-Total:₹${d.total}`;
-
-  window.open("https://wa.me/918798394440?text="+encodeURIComponent(msg));
-}
-
-// UPI
-function payNow(){
-  let d=getDetails(); if(!d) return;
-  window.open(`upi://pay?pa=nanayukar@oksbi&am=${d.total}&cu=INR`);
-}
-
-// Email
-function sendEmail(){
-  let d=getDetails(); if(!d) return;
-
-  let body=`Name:${d.name}
-Vehicle:${d.vehicleText}
-Total:₹${d.total}`;
-
-  window.location.href=
-  `mailto:abotanirentals@gmail.com,${d.email}?body=${encodeURIComponent(body)}`;
-}
-
-// Receipt
-function printReceipt(){
-  let d=getDetails(); if(!d) return;
-
-  let w=window.open('');
-  w.document.write(`<h2>Receipt</h2>
-  Name:${d.name}<br>
-  Vehicle:${d.vehicleText}<br>
-  Total:₹${d.total}`);
-  w.print();
-}
 </script>
 
 </body>
