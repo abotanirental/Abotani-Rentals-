@@ -49,7 +49,7 @@ button {
 
 <input id="name" placeholder="Full Name">
 <input id="address" placeholder="Address">
-<input id="aadhaar" placeholder="Aadhaar Number">
+<input id="aadhar" placeholder="Aadhaar Number">
 <input id="phone" placeholder="WhatsApp Number">
 
 <select id="vehicle">
@@ -58,7 +58,7 @@ button {
 </select>
 
 <input type="date" id="date">
-<input type="number" id="days" placeholder="Days (min 1)">
+<input type="number" id="days" placeholder="Days (minimum 1)">
 
 <h3 id="total">Total: ₹0</h3>
 <p id="status"></p>
@@ -87,7 +87,7 @@ const db = firebase.firestore();
 function getData(){
   let name = document.getElementById("name").value;
   let address = document.getElementById("address").value;
-  let aadhaar = document.getElementById("aadhaar").value;
+  let aadhar = document.getElementById("aadhar").value;
   let phone = document.getElementById("phone").value;
   let vehicle = document.getElementById("vehicle").value;
   let date = document.getElementById("date").value;
@@ -104,7 +104,7 @@ function getData(){
   return {name,address,aadhar,phone,vehicle,date,days,total};
 }
 
-// CHECK AVAILABILITY
+// CHECK AVAILABILITY (WITH ADMIN BLOCK)
 function checkAvailability(){
   let d = getData();
   if(!d) return;
@@ -139,14 +139,14 @@ function checkAvailability(){
   });
 }
 
-// BOOK NOW
+// BOOK + PAYMENT + WHATSAPP
 function bookNow(){
   let d = getData();
   if(!d) return;
 
   db.collection("bookings").add(d);
 
-  // UPI Payment
+  // UPI
   window.location.href = `upi://pay?pa=nanayukar@oksbi&pn=Abotani Rentals&am=${d.total}&cu=INR`;
 
   let msg = `Booking Confirmed
@@ -155,10 +155,10 @@ Date: ${d.date}
 Days: ${d.days}
 Total: ₹${d.total}`;
 
-  // WhatsApp to customer
+  // customer
   window.open(`https://wa.me/91${d.phone}?text=${encodeURIComponent(msg)}`);
 
-  // WhatsApp to admin
+  // admin
   window.open(`https://wa.me/918798394440?text=${encodeURIComponent(msg)}`);
 }
 
