@@ -109,9 +109,19 @@ function checkAvailability(){
   let d = getData();
   if(!d) return;
 
-  db.collection("bookings")
-    .where("date","==",d.date)
-    .get()
+  // check blocked dates
+  db.collection("blocked").where("date","==",d.date).get()
+  .then(blockSnap => {
+
+    if(!blockSnap.empty){
+      status.innerText = "❌ Blocked by admin";
+      status.style.color = "red";
+      payBtn.style.display = "none";
+      return;
+    }
+
+    // check bookings
+    db.collection("bookings").where("date","==",d.date).get()
     .then(snapshot => {
 
       if(snapshot.empty){
@@ -125,6 +135,8 @@ function checkAvailability(){
       }
 
     });
+
+  });
 }
 
 // BOOK NOW
