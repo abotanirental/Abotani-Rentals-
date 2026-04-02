@@ -2,86 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abotani Rentals | Book Now</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Abotani Rentals - Ride Swift and Safe</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Razorpay SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <style>
-        .logo-bounce {
-            animation: bounce 2s infinite;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(-3%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
-            50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
-        }
-    </style>
 </head>
-<body class="bg-gray-50 font-sans">
-    <div class="max-w-md mx-auto p-6 bg-white shadow-lg min-h-screen">
-        
-        <header class="text-center mb-8 flex flex-col items-center">
-            <img src="logo.png" alt="Abotani Rentals Logo" class="w-24 h-24 rounded-full object-cover shadow-md mb-4 border-2 border-orange-100 logo-bounce" onerror="this.onerror=null;this.src='https://via.placeholder.com/150?text=AR';">
+<body>
+    <div class="container">
+        <!-- Header with Logo -->
+        <div class="header">
+            <img src="logo.png" alt="Abotani Rentals Logo" class="logo" onerror="this.style.display='none'">
+            <h1>Abotani Rentals</h1>
+            <p class="tagline">Ride Swift and Safe • Itanagar</p>
+        </div>
+
+        <!-- Booking Form -->
+        <form id="bookingForm" class="booking-form">
+            <h2>Book Your Scooty</h2>
             
-            <h1 class="text-3xl font-bold text-orange-600">🚀 Abotani Rentals</h1>
-            <p class="text-gray-500">Fast & Reliable Two-Wheeler Booking</p>
-        </header>
-
-        <form id="bookingForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium">Full Name</label>
-                <input type="text" id="custName" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200">
-            </div>
-            <div>
-                <label class="block text-sm font-medium">Address</label>
-                <textarea id="custAddress" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200"></textarea>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium">Aadhaar (12 digits)</label>
-                    <input type="number" id="custAadhaar" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">WhatsApp No</label>
-                    <input type="number" id="custPhone" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium">Vehicle</label>
-                    <select id="vehicleType" class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200">
-                        <option value="Scooty" data-price="699">Scooty (₹699)</option>
-                        <option value="Bike" data-price="799">Bike (₹799)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Start Date</label>
-                    <input type="date" id="bookingDate" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200">
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium">Number of Days</label>
-                <input type="number" id="numDays" min="1" value="1" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-200">
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="fullName" required>
             </div>
 
-            <div id="statusMsg" class="text-center font-bold hidden p-3 rounded-lg"></div>
+            <div class="form-group">
+                <label>Address *</label>
+                <textarea id="address" rows="2" required></textarea>
+            </div>
 
-            <button type="button" id="checkBtn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition transform hover:scale-105">
-                Check Availability
-            </button>
+            <div class="form-group">
+                <label>Aadhaar Card Number *</label>
+                <input type="text" id="aadhaar" maxlength="12" pattern="[0-9]{12}" placeholder="123456789012" required>
+                <small>Full Aadhaar number will be stored for security and legal purposes (legal requirement)</small>
+            </div>
 
-            <button type="button" id="payBtn" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hidden transform hover:scale-105 transition">
-                Pay Now (₹<span id="totalDisplay">0</span>)
-            </button>
+            <div class="form-group">
+                <label>Phone Number *</label>
+                <input type="tel" id="phone" maxlength="10" pattern="[0-9]{10}" placeholder="10 digits" required>
+            </div>
+
+            <div class="form-group">
+                <label>Driving License Number *</label>
+                <input type="text" id="dlNumber" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date *</label>
+                    <input type="date" id="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Number of Days *</label>
+                    <input type="number" id="days" min="1" max="30" value="1" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="consent" required>
+                    I confirm that all details provided are correct. I understand that the full Aadhaar number is not stored digitally for legal compliance, and I am responsible for the vehicle during the rental period.
+                </label>
+            </div>
+
+            <!-- Availability Display -->
+            <div id="availabilityResult" class="availability-box hidden"></div>
+
+            <!-- Pay Button (hidden until availability checked) -->
+            <button type="button" id="payBtn" class="pay-btn hidden" disabled>Pay to Book</button>
         </form>
 
-        <footer class="mt-12 text-center text-xs text-gray-400">
-            © 2024 Abotani Rentals. All rights reserved.
-        </footer>
+        <div class="contact">
+            <p>📞 For support: 8798394440</p>
+        </div>
     </div>
 
-    <script type="module">
-        // Firebase and Razorpay Logic remains exactly as provided in the previous turn
-        // Ensure you fill in your Firebase Config and Razorpay Key!
-    </script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
