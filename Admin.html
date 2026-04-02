@@ -3,113 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Abotani Rentals</title>
+    <title>Abotani Rentals - Admin</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="container admin-container">
+        <div class="admin-header">
             <h1>Abotani Rentals Admin</h1>
-            <p>Ride Swift and Safe</p>
+            <button id="logoutBtn" style="background:red; padding:8px 16px;">Logout</button>
         </div>
-
-        <div style="padding: 30px;">
-            <!-- Login Form -->
-            <div id="loginDiv">
-                <h2>Admin Login</h2>
-                <input type="password" id="passwordInput" placeholder="Enter Password" style="width: 100%; padding: 12px; margin: 10px 0;">
-                <button id="loginBtn" style="width: 100%; padding: 12px; background: #1e3c72; color: white; border: none; border-radius: 8px;">Login</button>
-                <div id="errorMsg" style="color: red; margin-top: 10px;"></div>
+        
+        <div id="loginBox" style="padding:30px; text-align:center;">
+            <h2>Admin Login</h2>
+            <input type="password" id="adminPass" placeholder="Enter Password" style="padding:10px; width:200px;">
+            <button id="loginBtn" style="padding:10px 20px; margin:10px;">Login</button>
+            <div id="loginError" style="color:red;"></div>
+        </div>
+        
+        <div id="adminPanel" style="display:none; padding:20px;">
+            <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+                <button id="viewDashboardBtn" class="nav-btn">📊 Dashboard</button>
+                <button id="viewBookingsBtn" class="nav-btn">📅 Bookings</button>
+                <button id="viewSlotsBtn" class="nav-btn">🛵 Slots</button>
+                <button id="viewVerifyBtn" class="nav-btn">✅ Verify Payments</button>
             </div>
-
-            <!-- Admin Panel (hidden until login) -->
-            <div id="adminPanel" style="display: none;">
-                <h2>Welcome Admin</h2>
-                
-                <div class="stats-grid" style="margin: 20px 0;">
-                    <div class="stat-card">
-                        <h3>Total Bookings</h3>
-                        <div class="value" id="totalCount">0</div>
-                    </div>
+            
+            <div id="dashboardView">
+                <div class="stats-grid">
+                    <div class="stat-card"><h3>Revenue</h3><div class="value" id="totalRevenue">₹0</div></div>
+                    <div class="stat-card"><h3>Bookings</h3><div class="value" id="totalBookings">0</div></div>
+                    <div class="stat-card"><h3>Verified</h3><div class="value" id="verifiedCount">0</div></div>
                 </div>
-
+                <h3>Recent Bookings</h3>
+                <div class="bookings-table"><table id="recentTable"><thead><tr><th>Name</th><th>Phone</th><th>Dates</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recentBody"></tbody></table></div>
+            </div>
+            
+            <div id="bookingsView" style="display:none;">
                 <h3>All Bookings</h3>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #1e3c72; color: white;">
-                                <th style="padding: 10px;">Name</th>
-                                <th style="padding: 10px;">Phone</th>
-                                <th style="padding: 10px;">Aadhaar</th>
-                                <th style="padding: 10px;">DL</th>
-                                <th style="padding: 10px;">Start Date</th>
-                                <th style="padding: 10px;">Days</th>
-                                <th style="padding: 10px;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bookingsTable">
-                            <tr><td colspan="7" style="text-align: center;">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <button id="logoutBtn" style="margin-top: 20px; padding: 10px; background: red; color: white; border: none; border-radius: 8px;">Logout</button>
+                <div class="bookings-table"><table id="allBookingsTable"><thead><tr><th>Name</th><th>Phone</th><th>Aadhaar</th><th>DL</th><th>Start</th><th>Days</th><th>Amount</th><th>Status</th><th>Payment ID</th></tr></thead><tbody id="allBookingsBody"></tbody></table></div>
+            </div>
+            
+            <div id="slotsView" style="display:none;">
+                <h3>Slot Management</h3>
+                <input type="date" id="slotDate"><button id="checkSlotBtn">Check Slots</button>
+                <div id="slotInfo"></div>
+            </div>
+            
+            <div id="verifyView" style="display:none;">
+                <h3>Pending Verifications</h3>
+                <div class="bookings-table"><table id="pendingTable"><thead><tr><th>Name</th><th>Phone</th><th>Amount</th><th>Payment ID</th><th>Action</th></tr></thead><tbody id="pendingBody"></tbody></table></div>
             </div>
         </div>
     </div>
-
+    
     <script type="module">
-        import { db, collection, getDocs } from './firebase-config.js';
-
+        import { db, collection, getDocs, updateDoc, doc } from './firebase-config.js';
+        
         const PASSWORD = "Itanagar@raga";
-
+        
         document.getElementById('loginBtn').onclick = () => {
-            const pass = document.getElementById('passwordInput').value;
+            const pass = document.getElementById('adminPass').value;
             if (pass === PASSWORD) {
-                document.getElementById('loginDiv').style.display = 'none';
+                document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
-                loadBookings();
+                loadDashboard();
             } else {
-                document.getElementById('errorMsg').innerText = 'Wrong password!';
+                document.getElementById('loginError').innerText = 'Wrong password';
             }
         };
-
-        async function loadBookings() {
-            try {
-                const querySnapshot = await getDocs(collection(db, 'bookings'));
-                const bookings = [];
-                querySnapshot.forEach(doc => {
-                    bookings.push(doc.data());
-                });
-                
-                document.getElementById('totalCount').innerText = bookings.length;
-                
-                const tbody = document.getElementById('bookingsTable');
-                if (bookings.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7">No bookings yet</td></tr>';
-                } else {
-                    tbody.innerHTML = bookings.map(b => `
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${b.customerName || 'N/A'}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${b.phone || 'N/A'}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${b.aadhaar || 'N/A'}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${b.dlNumber || 'N/A'}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${b.startDate || 'N/A'}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${b.days || 0}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">₹${b.totalAmount || 0}</td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading:', error);
-                document.getElementById('bookingsTable').innerHTML = '<tr><td colspan="7">Error loading bookings</td></tr>';
-            }
-        }
-
+        
         document.getElementById('logoutBtn').onclick = () => {
-            document.getElementById('loginDiv').style.display = 'block';
+            document.getElementById('loginBox').style.display = 'block';
             document.getElementById('adminPanel').style.display = 'none';
-            document.getElementById('passwordInput').value = '';
+            document.getElementById('adminPass').value = '';
+        };
+        
+        document.getElementById('viewDashboardBtn').onclick = () => { showView('dashboard'); loadDashboard(); };
+        document.getElementById('viewBookingsBtn').onclick = () => { showView('bookings'); loadAllBookings(); };
+        document.getElementById('viewSlotsBtn').onclick = () => { showView('slots'); };
+        document.getElementById('viewVerifyBtn').onclick = () => { showView('verify'); loadPending(); };
+        
+        function showView(view) {
+            document.getElementById('dashboardView').style.display = 'none';
+            document.getElementById('bookingsView').style.display = 'none';
+            document.getElementById('slotsView').style.display = 'none';
+            document.getElementById('verifyView').style.display = 'none';
+            if (view === 'dashboard') document.getElementById('dashboardView').style.display = 'block';
+            if (view === 'bookings') document.getElementById('bookingsView').style.display = 'block';
+            if (view === 'slots') document.getElementById('slotsView').style.display = 'block';
+            if (view === 'verify') document.getElementById('verifyView').style.display = 'block';
+        }
+        
+        async function loadDashboard() {
+            const snapshot = await getDocs(collection(db, 'bookings'));
+            const bookings = [];
+            snapshot.forEach(doc => bookings.push(doc.data()));
+            
+            const totalRevenue = bookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+            const verified = bookings.filter(b => b.paymentStatus === 'verified').length;
+            
+            document.getElementById('totalRevenue').innerText = `₹${totalRevenue}`;
+            document.getElementById('totalBookings').innerText = bookings.length;
+            document.getElementById('verifiedCount').innerText = verified;
+            
+            const recent = bookings.slice(-5).reverse();
+            document.getElementById('recentBody').innerHTML = recent.map(b => `
+                <tr><td>${b.customerName}</td><td>${b.phone}</td><td>${b.startDate}</td><td>₹${b.totalAmount}</td><td>${b.paymentStatus}</td></tr>
+            `).join('');
+        }
+        
+        async function loadAllBookings() {
+            const snapshot = await getDocs(collection(db, 'bookings'));
+            const bookings = [];
+            snapshot.forEach(doc => bookings.push({id: doc.id, ...doc.data()}));
+            
+            document.getElementById('allBookingsBody').innerHTML = bookings.map(b => `
+                <tr>
+                    <td>${b.customerName}</td><td>${b.phone}</td><td>${b.aadhaar}</td><td>${b.dlNumber}</td>
+                    <td>${b.startDate}</td><td>${b.days}</td><td>₹${b.totalAmount}</td>
+                    <td class="status-${b.paymentStatus}">${b.paymentStatus}</td><td>${b.razorpayPaymentId || '-'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        async function loadPending() {
+            const snapshot = await getDocs(collection(db, 'bookings'));
+            const pending = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.paymentStatus !== 'verified') {
+                    pending.push({id: doc.id, ...data});
+                }
+            });
+            
+            document.getElementById('pendingBody').innerHTML = pending.map(b => `
+                <tr>
+                    <td>${b.customerName}</td><td>${b.phone}</td><td>₹${b.totalAmount}</td>
+                    <td>${b.razorpayPaymentId || 'N/A'}</td>
+                    <td><button class="verify-btn" data-id="${b.id}">✅ Verify</button></td>
+                </tr>
+            `).join('');
+            
+            document.querySelectorAll('.verify-btn').forEach(btn => {
+                btn.onclick = async () => {
+                    const id = btn.getAttribute('data-id');
+                    await updateDoc(doc(db, 'bookings', id), {
+                        paymentStatus: 'verified',
+                        verifiedAt: new Date().toISOString()
+                    });
+                    alert('Payment verified!');
+                    loadPending();
+                    loadDashboard();
+                };
+            });
+        }
+        
+        document.getElementById('checkSlotBtn').onclick = async () => {
+            const date = document.getElementById('slotDate').value;
+            if (!date) { alert('Select date'); return; }
+            const slotDoc = await getDocs(collection(db, 'slots', date));
+            document.getElementById('slotInfo').innerHTML = `<p>Date: ${date}<br>Manage slots in Firebase Console</p>`;
         };
     </script>
 </body>
