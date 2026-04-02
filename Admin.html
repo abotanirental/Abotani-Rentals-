@@ -1,1 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abotani Rentals - Admin</title>
 
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+</head>
+
+<body class="bg-gray-50 font-sans">
+
+<div class="max-w-5xl mx-auto p-6">
+
+  <!-- HEADER -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-orange-600">Admin Dashboard</h1>
+    <button onclick="loadData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+      Refresh
+    </button>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+    <div class="bg-white p-4 shadow rounded">
+      <p class="text-gray-500">Total Revenue</p>
+      <p id="totalRevenue" class="text-xl font-bold text-green-600">₹0</p>
+    </div>
+
+    <div class="bg-white p-4 shadow rounded">
+      <p class="text-gray-500">Bookings</p>
+      <p id="totalBookings" class="text-xl font-bold">0</p>
+    </div>
+
+    <div class="bg-white p-4 shadow rounded">
+      <p class="text-gray-500">Scooty</p>
+      <p id="scootyCount" class="text-xl font-bold text-orange-600">0</p>
+    </div>
+
+    <div class="bg-white p-4 shadow rounded">
+      <p class="text-gray-500">Bike</p>
+      <p id="bikeCount" class="text-xl font-bold text-purple-600">0</p>
+    </div>
+
+  </div>
+
+  <!-- BLOCK DATE -->
+  <div class="bg-white p-4 rounded shadow mb-6">
+    <h2 class="text-lg font-bold mb-3">Block Date</h2>
+
+    <input type="date" id="blockDate" class="border p-2 rounded mr-2">
+    
+    <select id="blockVehicle" class="border p-2 rounded mr-2">
+      <option value="all">All</option>
+      <option value="Scooty">Scooty</option>
+      <option value="Bike">Bike</option>
+    </select>
+
+    <button onclick="blockDate()" class="bg-red-600 text-white px-4 py-2 rounded">
+      Block
+    </button>
+  </div>
+
+  <!-- BOOKINGS TABLE -->
+  <div class="bg-white shadow rounded overflow-x-auto">
+    <table class="w-full text-sm">
+
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-3 text-left">Name</th>
+          <th class="p-3 text-left">Phone</th>
+          <th class="p-3 text-left">Vehicle</th>
+          <th class="p-3 text-left">Date</th>
+          <th class="p-3 text-left">Days</th>
+          <th class="p-3 text-left">Total</th>
+          <th class="p-3 text-left">Payment</th>
+        </tr>
+      </thead>
+
+      <tbody id="tableBody"></tbody>
+
+    </table>
+  </div>
+
+</div>
+
+<script>
+
+// 🔥 FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let bookings = [];
+
+// LOAD DATA
+async function loadData() {
+
+  const snap = await db.collection("bookings").orderBy("timestamp", "desc").get();
+
+  bookings = snap.docs.map(doc => doc.data());
+
+  renderTable();
+  updateStats();
+}
+
+// TABLE
+function renderTable() {
+  const body = document.getElementById("tableBody");
+
+  body.innerHTML = bookings.map(b => `
+    <tr class="border-b">
+      <td class="p-3">${b.name}</td>
+      <td class="p-3">${b.phone}</td>
+      <td class="p-3">${b.vehicle}</td>
+      <td class="p-3">${b.date}</td>
+      <td class="p-3">${b.days}</td>
+      <td class="p-3">₹${b.total}</td>
+      <td class="p-3 text-green-600 font-bold">${b.paymentId?.slice(-6)}</td>
+    </tr>
+  `).join('');
+}
+
+// STATS
+function updateStats() {
+
+  const totalRevenue = bookings.reduce((sum, b) => sum + Number(b.total), 0);
+
+  document.getElementById("totalRevenue").innerText = "₹" + totalRevenue;
+  document.getElementById("totalBookings").innerText = bookings.length;
+  document.getElementById("scootyCount").innerText = bookings.filter(b => b.vehicle === "Scooty").length;
+  document.getElementById("bikeCount").innerText = bookings.filter(b => b.vehicle === "Bike").length;
+}
+
+// BLOCK DATE
+async function blockDate() {
+
+  const date = document.getElementById("blockDate").value;
+  const vehicle = document.getElementById("blockVehicle").value;
+
+  if (!date) return alert("Select date");
+
+  await db.collection("blocked").add({
+    date,
+    vehicle: vehicle === "all" ? null : vehicle
+  });
+
+  alert("Date Blocked");
+}
+
+// INIT
+loadData();
+
+</script>
+
+</body>
+</html>
