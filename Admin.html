@@ -1,1 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Abotani Rentals</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container admin-container">
+        <div class="admin-header">
+            <div>
+                <h1>🚀 Abotani Rentals</h1>
+                <p>Admin Dashboard | Delhi</p>
+            </div>
+            <div class="admin-nav">
+                <button id="dashboardBtn" class="active">📊 Dashboard</button>
+                <button id="bookingsBtn">📅 Bookings</button>
+                <button id="slotsBtn">🛵 Slot Management</button>
+                <button id="verifyBtn">✅ Payment Verification</button>
+                <button id="settingsBtn">⚙️ Settings</button>
+                <button id="logoutBtn">🚪 Logout</button>
+            </div>
+        </div>
 
+        <div class="admin-content" id="adminContent">
+            <!-- Dashboard View (Default) -->
+            <div id="dashboardView">
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <h3>Total Revenue</h3>
+                        <div class="value" id="totalRevenue">₹0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Bookings</h3>
+                        <div class="value" id="totalBookings">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Active Bookings</h3>
+                        <div class="value" id="activeBookings">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completed Bookings</h3>
+                        <div class="value" id="completedBookings">0</div>
+                    </div>
+                </div>
+                
+                <h3>Recent Bookings</h3>
+                <div class="bookings-table" id="recentBookings">
+                    <table>
+                        <thead>
+                            <tr><th>Booking ID</th><th>Customer</th><th>Phone</th><th>Dates</th><th>Amount</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="recentTableBody">
+                            <tr><td colspan="6">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bookings View -->
+            <div id="bookingsView" style="display:none;">
+                <h2>All Bookings</h2>
+                <div class="bookings-table">
+                    <table>
+                        <thead>
+                            <tr><th>Booking ID</th><th>Customer</th><th>Phone</th><th>Aadhaar</th><th>DL</th><th>Start Date</th><th>Days</th><th>Amount</th><th>Status</th><th>Payment ID</th></tr>
+                        </thead>
+                        <tbody id="allBookingsTableBody">
+                            <tr><td colspan="10">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Slot Management View -->
+            <div id="slotsView" style="display:none;">
+                <h2>Slot Availability Management</h2>
+                <div class="form-group">
+                    <label>Select Date</label>
+                    <input type="date" id="slotDate" min="2026-01-01">
+                    <button id="checkSlotBtn">Check Slots</button>
+                </div>
+                <div id="slotDetails" style="margin-top: 20px;"></div>
+                
+                <h3 style="margin-top: 30px;">Quick Date Range Setup</h3>
+                <div class="form-group">
+                    <label>From Date</label>
+                    <input type="date" id="rangeStart">
+                    <label>To Date</label>
+                    <input type="date" id="rangeEnd">
+                    <label>Set Available Slots (0-3)</label>
+                    <input type="number" id="rangeSlots" min="0" max="3" value="3">
+                    <button id="applyRangeBtn">Apply to Range</button>
+                </div>
+            </div>
+
+            <!-- Payment Verification View -->
+            <div id="verifyView" style="display:none;">
+                <h2>Pending Payment Verification</h2>
+                <div class="bookings-table">
+                    <table>
+                        <thead>
+                            <tr><th>Booking ID</th><th>Customer</th><th>Phone</th><th>Amount</th><th>Payment ID</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="pendingTableBody">
+                            <tr><td colspan="6">No pending verifications</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" style="display:none;">
+                <h2>Admin Settings</h2>
+                <div class="form-group">
+                    <label>Change Admin Password</label>
+                    <input type="password" id="newPassword" placeholder="Enter new password">
+                    <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                    <button id="changePasswordBtn">Update Password</button>
+                </div>
+                <div class="form-group">
+                    <label>Price per Day (₹)</label>
+                    <input type="number" id="pricePerDay" value="699">
+                    <button id="updatePriceBtn">Update Price</button>
+                </div>
+                <div class="form-group">
+                    <label>Support Phone Number</label>
+                    <input type="text" id="supportPhone" value="8798394440">
+                    <button id="updatePhoneBtn">Update Phone</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <h2>Admin Login</h2>
+            <p>Abotani Rentals</p>
+            <input type="password" id="adminPassword" placeholder="Enter password">
+            <button id="submitPasswordBtn">Login</button>
+            <div id="loginError" class="error"></div>
+        </div>
+    </div>
+
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
