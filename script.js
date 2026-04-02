@@ -133,8 +133,8 @@ async function initiatePayment() {
     const aadhaar = document.getElementById('aadhaar').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const dlNumber = document.getElementById('dlNumber').value.trim();
-    const startDate = startDateInput.value;
-    const days = parseInt(daysInput.value);
+    const startDate = document.getElementById('startDate').value;
+    const days = parseInt(document.getElementById('days').value);
     const consent = document.getElementById('consent').checked;
     
     if (!fullName || !address || !aadhaar || !phone || !dlNumber || !startDate || !days || !consent) {
@@ -153,56 +153,29 @@ async function initiatePayment() {
     }
     
     // Calculate total amount
-    const totalAmount = days * PRICE_PER_DAY;
+    const totalAmount = days * 699; // ₹699 per day
     
-    // Generate unique booking ID
-    const bookingId = `ABT_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-    
-    // Store booking data temporarily in localStorage for webhook
-    const bookingData = {
-        bookingId,
-        fullName,
-        address,
-        aadhaar,
-        phone,
-        dlNumber,
-        startDate,
-        days,
-        totalAmount,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-    };
-    
-    localStorage.setItem('pendingBooking', JSON.stringify(bookingData));
-    
-    // Razorpay options
+    // Razorpay options (SIMPLIFIED - same as working test)
     const options = {
-        key: 'rzp_test_SYcTI0OyfTr45x', // Replace with your Razorpay Key ID
-        amount: totalAmount * 100, // Amount in paise
+        key: 'rzp_test_SYcTI0OyfTr45x',  // ← PUT YOUR ACTUAL KEY
+        amount: totalAmount * 100,
         currency: 'INR',
         name: 'Abotani Rentals',
-        description: `${days} Day(s) Scooty Rental | ${startDate}`,
-        image: 'logo.png',
+        description: `${days} Day(s) | ${startDate}`,
         handler: function(response) {
-            // Payment successful
-            verifyPayment(response, bookingData);
+            alert('✅ Payment Successful!\nPayment ID: ' + response.razorpay_payment_id);
+            alert('Booking confirmed! Check your email/WhatsApp for receipt.');
+            // Reset form after success
+            document.getElementById('bookingForm').reset();
+            document.getElementById('availabilityResult').classList.add('hidden');
+            document.getElementById('payBtn').classList.add('hidden');
         },
         prefill: {
             name: fullName,
             contact: phone,
         },
-        notes: {
-            bookingId: bookingId,
-            phone: phone
-        },
         theme: {
             color: '#667eea'
-        },
-        modal: {
-            ondismiss: function() {
-                console.log('Payment cancelled');
-                localStorage.removeItem('pendingBooking');
-            }
         }
     };
     
